@@ -25,11 +25,10 @@ module Extract_Field #(
   reg   [EXTRACT_WIDTH-1:0]         r_extract_data;
   //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
 
-
   //====================================================================//
   //*   extract fields
   //====================================================================//
-  assign w_extract_data = i_data[i_offset];
+  assign w_extract_data = i_data[(PHV_WIDTH/EXTRACT_WIDTH-i_offset-1)*EXTRACT_WIDTH+:EXTRACT_WIDTH];
   assign o_extract_data = (EXTRACT_NO_DELAHY)? w_extract_data: r_extract_data;
 
   always @(posedge i_clk or negedge i_rst_n) begin

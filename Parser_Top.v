@@ -17,8 +17,7 @@ module Parser_Top
   parameter KEY_FILED_NUM       = 8,
   parameter TYPE_OFFSET_WIDTH   = $clog2(PHV_WIDTH/TYPE_WIDTH),
   parameter KEY_OFFSET_WIDTH    = $clog2(PHV_WIDTH/KEY_FIELD_WIDTH),
-  parameter RULE_NUM            = 4,
-  parameter RULE_WIDTH          = 1 + 2*TYPE_NUM*TYPE_WIDTH + KEY_OFFSET_WIDTH*KEY_FILED_NUM
+  parameter RULE_NUM            = 4
 )(
   input   wire                  i_clk,
   input   wire                  i_rst_n,
@@ -46,11 +45,14 @@ module Parser_Top
   wire  [KEY_FILED_NUM-1:0][KEY_FIELD_WIDTH-1:0]      w_key_field;
   wire  [KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0]     w_key_offset;
   wire  [RULE_NUM-1:0]                                w_typeRule_wren;
-  wire  [RULE_WIDTH-1:0]                              w_typeRule_wdata;
+  wire                                                w_typeRule_valid;
+  wire  [TYPE_NUM-1:0][TYPE_WIDTH-1:0]                w_typeRule_typeData;
+  wire  [TYPE_NUM-1:0][TYPE_WIDTH-1:0]                w_typeRule_typeMask;
+  wire  [KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0]     w_typeRule_keyOffset;
   //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
 
   genvar idx;
-  generate for (idx = 0; idx < TYPE_NUM; idx=idx+1) begin : gen_extract_field
+  generate for (idx = 0; idx < TYPE_NUM; idx=idx+1) begin : gen_extract_type
     Extract_Field 
     #(
       .PHV_WIDTH        (PHV_WIDTH          ),
@@ -63,7 +65,9 @@ module Parser_Top
       .o_extract_data   (w_type_field[idx]  ),
       .i_offset         (w_type_offset[idx] )
     );
-
+    end
+  endgenerate
+  generate for (idx = 0; idx < KEY_FILED_NUM; idx=idx+1) begin : gen_extract_field
     Extract_Field 
     #(
       .PHV_WIDTH        (PHV_WIDTH          ),
@@ -85,8 +89,7 @@ module Parser_Top
     .TYPE_WIDTH         (TYPE_WIDTH         ),
     .KEY_FILED_NUM      (KEY_FILED_NUM      ),
     .KEY_OFFSET_WIDTH   (KEY_OFFSET_WIDTH   ),
-    .RULE_NUM           (RULE_NUM           ),
-    .RULE_WIDTH         (RULE_WIDTH         )
+    .RULE_NUM           (RULE_NUM           )
   )
   lookup_type(
     .i_clk              (i_clk              ),
@@ -94,25 +97,33 @@ module Parser_Top
     .i_type             (w_type_field       ),
     .o_result           (w_key_offset       ),
     .i_rule_wren        (w_typeRule_wren    ),
-    .i_rule_wdata       (w_typeRule_wdata   )
+    .i_typeRule_valid     (w_typeRule_valid       ),
+    .i_typeRule_typeData  (w_typeRule_typeData    ),
+    .i_typeRule_typeMask  (w_typeRule_typeMask    ),
+    .i_typeRule_keyOffset (w_typeRule_keyOffset   )
   );
 
   Rule_Conf
   #(
     .TYPE_OFFSET_WIDTH  (TYPE_OFFSET_WIDTH  ),
     .TYPE_NUM           (TYPE_NUM           ),
-    .RULE_NUM           (RULE_NUM           ),
-    .RULE_WIDTH         (RULE_WIDTH         )
+    .TYPE_WIDTH         (TYPE_WIDTH         ),
+    .KEY_FILED_NUM      (KEY_FILED_NUM      ),
+    .KEY_OFFSET_WIDTH   (KEY_OFFSET_WIDTH   ),
+    .RULE_NUM           (RULE_NUM           )
   )
   rule_conf(
-    .i_clk              (i_clk              ),
-    .i_rst_n            (i_rst_n            ),
-    .i_rule_wren        (i_rule_wren        ),
-    .i_rule_wdata       (i_rule_wdata       ),
-    .i_rule_addr        (i_rule_addr        ),
-    .o_type_offset      (w_type_offset      ),
-    .o_typeRule_wren    (w_typeRule_wren    ),
-    .o_typeRule_wdata   (w_typeRule_wdata   )
+    .i_clk                (i_clk                  ),
+    .i_rst_n              (i_rst_n                ),
+    .i_rule_wren          (i_rule_wren            ),
+    .i_rule_wdata         (i_rule_wdata           ),
+    .i_rule_addr          (i_rule_addr            ),
+    .o_type_offset        (w_type_offset          ),
+    .o_typeRule_wren      (w_typeRule_wren        ),
+    .o_typeRule_valid     (w_typeRule_valid       ),
+    .o_typeRule_typeData  (w_typeRule_typeData    ),
+    .o_typeRule_typeMask  (w_typeRule_typeMask    ),
+    .o_typeRule_keyOffset (w_typeRule_keyOffset   )
   );
 
   assign o_rule_rdata_valid = i_rule_rden;

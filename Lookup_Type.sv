@@ -16,7 +16,6 @@ module Lookup_Type
   parameter     KEY_FILED_NUM   = 8,
   parameter     KEY_OFFSET_WIDTH= 6,
   parameter     RULE_NUM        = 4,
-  parameter     RULE_WIDTH      = 1 + 2*TYPE_NUM*TYPE_WIDTH + KEY_FILED_NUM*KEY_OFFSET_WIDTH,
   parameter     LOOKUP_NO_DELAHY= 1
 )
 (
@@ -25,17 +24,23 @@ module Lookup_Type
   input   wire  [TYPE_NUM-1:0][TYPE_WIDTH-1:0]              i_type,
   output  reg   [KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0]   o_result,
   input   wire  [RULE_NUM-1:0]                              i_rule_wren,
-  input   wire  [RULE_WIDTH-1:0]                            i_rule_wdata
+  input   wire                                              i_typeRule_valid,
+  input   wire  [TYPE_NUM-1:0][TYPE_WIDTH-1:0]              i_typeRule_typeData,
+  input   wire  [TYPE_NUM-1:0][TYPE_WIDTH-1:0]              i_typeRule_typeMask,
+  input   wire  [KEY_FILED_NUM][KEY_OFFSET_WIDTH-1:0]       i_typeRule_keyOffset
 );
 
 
   //====================================================================//
   //*   internal reg/wire/param declarations
   //====================================================================//
-  reg   [RULE_NUM-1:0][RULE_WIDTH-1:0]                      r_rule;
-  logic [RULE_NUM-1:0]                                      w_hit_rule;
-  logic [TYPE_NUM*TYPE_WIDTH-1:0]                           w_type;
-  reg   [KEY_FILED_NUM*KEY_OFFSET_WIDTH-1:0]                w_result;
+  reg   [RULE_NUM-1:0]                                          r_rule_valid;
+  reg   [RULE_NUM-1:0][TYPE_NUM-1:0][TYPE_WIDTH-1:0]            r_rule_typeData;
+  reg   [RULE_NUM-1:0][TYPE_NUM-1:0][TYPE_WIDTH-1:0]            r_rule_typeMask;
+  reg   [RULE_NUM-1:0][KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0] r_rule_keyOffset;
+  logic [RULE_NUM-1:0]                                          w_hit_rule;
+  logic [TYPE_NUM*TYPE_WIDTH-1:0]                               w_type;
+  logic [KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0]               w_result;
   // reg   [KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0] r_result;
   //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
 
@@ -45,11 +50,14 @@ module Lookup_Type
   always_ff @(posedge i_clk or negedge i_rst_n) begin
     if(~i_rst_n) begin
       for (integer i = 0; i < RULE_NUM; i++) begin
-        r_rule[i][RULE_WIDTH-1] <= 1'b0;
+        r_rule_valid[i]         <= 'b0;
       end
     end else begin
       for (integer i = 0; i < RULE_NUM; i++) begin
-         r_rule[i]              <= i_rule_wren[i]? i_rule_wdata: r_rule[i];
+         r_rule_valid[i]        <= i_rule_wren[i]? i_typeRule_valid:    r_rule_valid[i];
+         r_rule_typeData[i]     <= i_rule_wren[i]? i_typeRule_typeData: r_rule_typeData[i];
+         r_rule_typeMask[i]     <= i_rule_wren[i]? i_typeRule_typeMask: r_rule_typeMask[i];
+         r_rule_keyOffset[i]    <= i_rule_wren[i]? i_typeRule_keyOffset:r_rule_keyOffset[i];
       end
     end
   end
@@ -67,9 +75,9 @@ module Lookup_Type
   //* check rules
   always_comb begin
     for (integer i = 0; i < RULE_NUM; i++) begin
-      w_hit_rule[i]             = r_rule[i][RULE_WIDTH-1] & 
-          (r_rule[i][RULE_WIDTH-1-:TYPE_NUM*TYPE_WIDTH] & w_type == 
-            r_rule[i][RULE_WIDTH-1-TYPE_NUM*TYPE_WIDTH:TYPE_NUM*TYPE_WIDTH]);
+      w_hit_rule[i] = r_rule_valid[i];
+      for(integer j = 0; j < TYPE_NUM; j++)
+        w_hit_rule[i] = w_hit_rule[i] & ((r_rule_typeMask[i][j] & i_type[j]) == r_rule_typeData[i][j]);
     end
   end
   //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
@@ -79,18 +87,17 @@ module Lookup_Type
   //====================================================================//
   // assign o_result = (LOOKUP_NO_DELAHY)? w_result: r_result;
   always_comb begin
-    w_result        = 'b0;
-    for(integer i= 0; i < RULE_NUM; i++) begin
-      w_result      = {KEY_FILED_NUM*KEY_OFFSET_WIDTH{w_hit_rule[i]}} & 
-                        r_rule[0+:KEY_FILED_NUM*KEY_OFFSET_WIDTH] |
-                        w_result;
+    for(integer j = 0; j < KEY_FILED_NUM; j++) begin
+      w_result[j]   = 'b0;
+      for(integer i = 0; i < RULE_NUM; i++)
+        w_result[j] = {KEY_OFFSET_WIDTH{w_hit_rule[i]}} & r_rule_keyOffset[i][j] | w_result[j];
     end
   end
 
 
   always_ff @(posedge i_clk) begin
     for (integer i = 0; i < KEY_FILED_NUM; i++) begin
-       o_result[i]  <= w_result[i*KEY_OFFSET_WIDTH+:KEY_OFFSET_WIDTH];
+       o_result[i]  <= w_result[i];
     end
   end
   //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
