@@ -18,7 +18,7 @@ module Rule_Conf
   input   wire                                            i_clk,
   input   wire                                            i_rst_n,
   input   wire                                            i_rule_wren,
-  input   wire  [63:0]                                    i_rule_wdata,
+  input   wire  [31:0]                                    i_rule_wdata,
   input   wire  [31:0]                                    i_rule_addr,
   output  reg   [TYPE_NUM-1:0][TYPE_OFFSET_WIDTH-1:0]     o_type_offset,
   output  reg   [RULE_NUM-1:0]                            o_typeRule_wren,
@@ -61,7 +61,7 @@ module Rule_Conf
           else if(i_rule_addr[9:8] == 2'b01) begin
             for(integer i=0; i<TYPE_NUM; i++)
               if(i_rule_addr[5:0] == i) begin
-                o_typeRule_typeData[i]        <= i_rule_wdata[32+:TYPE_WIDTH];
+                o_typeRule_typeData[i]        <= i_rule_wdata[16+:TYPE_WIDTH];
                 o_typeRule_typeMask[i]        <= i_rule_wdata[0+:TYPE_WIDTH];
               end
           end
