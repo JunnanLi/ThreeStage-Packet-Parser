@@ -149,9 +149,9 @@ module Parser_Top
 
   //* assign metadata;
   assign o_meta_valid       = 1'b0;
-  assign o_meta             = {META_WIDTH{1'b0}};
+  // assign o_meta             = {META_WIDTH{1'b0}};
   generate for (idx = 0; idx < KEY_FILED_NUM; idx=idx+1) begin : gen_meta
-    assign o_meta[idx*KEY_FIELD_WIDTH+:KEY_FIELD_WIDTH] = w_key_field[idx];
+    assign o_meta[127-idx*KEY_FIELD_WIDTH-:KEY_FIELD_WIDTH] = w_key_field[idx];
   end
   endgenerate
 
