@@ -27,18 +27,18 @@ module Lookup_Type
   input   wire                                              i_typeRule_valid,
   input   wire  [TYPE_NUM-1:0][TYPE_WIDTH-1:0]              i_typeRule_typeData,
   input   wire  [TYPE_NUM-1:0][TYPE_WIDTH-1:0]              i_typeRule_typeMask,
-  input   wire  [KEY_FILED_NUM][KEY_OFFSET_WIDTH-1:0]       i_typeRule_keyOffset
+  input   wire  [KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0]   i_typeRule_keyOffset
 );
 
 
   //====================================================================//
   //*   internal reg/wire/param declarations
   //====================================================================//
-  reg   [RULE_NUM-1:0]                                          r_rule_valid;
+  (* mark_debug = "true"*)reg   [RULE_NUM-1:0]                                          r_rule_valid;
   reg   [RULE_NUM-1:0][TYPE_NUM-1:0][TYPE_WIDTH-1:0]            r_rule_typeData;
   reg   [RULE_NUM-1:0][TYPE_NUM-1:0][TYPE_WIDTH-1:0]            r_rule_typeMask;
   reg   [RULE_NUM-1:0][KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0] r_rule_keyOffset;
-  logic [RULE_NUM-1:0]                                          w_hit_rule;
+  (* mark_debug = "true"*)logic [RULE_NUM-1:0]                                          w_hit_rule;
   logic [TYPE_NUM*TYPE_WIDTH-1:0]                               w_type;
   logic [KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0]               w_result;
   // reg   [KEY_FILED_NUM-1:0][KEY_OFFSET_WIDTH-1:0] r_result;
